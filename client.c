@@ -35,14 +35,14 @@ char* converse(int sockfd, char *file_as_string){
 
     strcpy(buffer, file_as_string);
         
-    write(sockfd, buffer, sizeof(buffer));
+    write(sockfd, buffer, strlen(buffer));
     
     bzero(buffer, sizeof(buffer));
     
     read(sockfd, buffer, sizeof(buffer));
     char* message = malloc(100);
     strcpy(message, buffer);
-
+    // printf("Message->%s",message);
     return message;
     // bzero(buffer, sizeof(buffer));
 
@@ -158,11 +158,24 @@ void low_entropy(int sockfd, struct sockaddr_in serv_addr){
 
     char packet[atoi(config_file->payload)];
 
+    char first_bit = 0;
+    char sec_bit = 0;
     for(int i =0;i<atoi(config_file->no_of_packets);i++){
         memset(packet, 0, atoi(config_file->payload)*sizeof(packet[0])); //initialize all elements of packet with 0 ie low entropy
 
-        packet[0] = (i>>8) & 0xFF;
-        packet[1] = i & 0xFF;
+        //packet[0] = (i>>8) & 0xFF;
+        //packet[1] = i & 0xFF;
+        
+        /*if(i ==0)
+            continue;
+        else{
+            first_bit++;
+            if(first_bit == 0)
+                sec_bit++;
+        }*/
+
+        packet[0] = first_bit;
+        packet[1] = sec_bit;
         // memcpy(packet + sizeof(uint16_t), &packet_id, sizeof(uint16_t));
 
         //printf("Packet id->%d\n", packet_id);
@@ -172,7 +185,7 @@ void low_entropy(int sockfd, struct sockaddr_in serv_addr){
 
         int packet_sent = sendto(sockfd, packet, atoi(config_file->payload), 0, (struct sockaddr*)&serv_addr, sizeof(serv_addr));
         if(packet_sent<0){
-            printf("Error in packet id %d\n", packet_id);
+            printf("Error in LE packet id %d\n", packet_id);
             exit(1);
         }
         // packet_id++;
@@ -226,12 +239,12 @@ void high_entropy(int sockfd, struct sockaddr_in serv_addr){
 
         //memcpy(packet + sizeof(uint16_t), &packet_id, sizeof(uint16_t));
         
-        packet[0] = (i>>8) & 0xFF;
-        packet[1] = i & 0xFF;
+        //packet[0] = (i>>8) & 0xFF;
+        //packet[1] = i & 0xFF;
         
         int packet_sent = sendto(sockfd, packet, atoi(config_file->payload), 0, (struct sockaddr*)&serv_addr, sizeof(serv_addr));
         if(packet_sent<0){
-            printf("Error in packet id %d\n", packet_id);
+            printf("Error in HE packet id %d\n", packet_id);
             exit(1);
         }
 
@@ -249,7 +262,7 @@ void udp_packets(){
     int port = atoi(config_file->dest_port_udp);
     serv_addr.sin_port = htons(port);
     serv_addr.sin_family = AF_INET;
-
+    
     int sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 
     if(sockfd<0){
@@ -272,12 +285,53 @@ void udp_packets(){
 
     low_entropy(sockfd, serv_addr);
 
-    //sleep(atoi(config_file->inter_measure_time));
+    sleep(atoi(config_file->inter_measure_time));
 
-    //high_entropy(sockfd, serv_addr);
+    high_entropy(sockfd, serv_addr);
 
 }
 
+void get_findings(int sockfd, char* file_as_string){
+    char findings[100];
+
+    // char* findings = malloc(100);
+    bzero(findings, sizeof(findings));
+    // char* findings = malloc(20*sizeof(char*));
+    read(sockfd, findings, sizeof(findings));
+
+    // printf("Findings->%s", findings);
+}
+
+
+void post_probing(char* file_as_string){
+    
+    int sockfd, connfd;
+    struct sockaddr_in servaddr, cli;
+
+    sockfd = socket(AF_INET, SOCK_STREAM, 0);
+
+    if(sockfd==-1){
+        printf("socket creation failed..\n");
+        exit(0);
+    }else  
+        printf("Socket created\n");
+
+    bzero(&servaddr, sizeof(servaddr));
+
+    servaddr.sin_family = AF_INET;
+    servaddr.sin_addr.s_addr = inet_addr(config_file->server_ip); // set ip address of server
+    int port = atoi(config_file->port_tcp);
+    servaddr.sin_port = htons(port);
+
+    if(connect(sockfd, (SA*)&servaddr, sizeof(servaddr))!=0){
+        printf("Connection with the server failed\n");
+        exit(0);
+    }else
+        printf("Connected to the server..\n");
+
+    get_findings(sockfd, file_as_string);
+    
+}
 void main(int argc, char **argv){
 
     config_file = malloc(sizeof(*config_file));
@@ -298,7 +352,7 @@ void main(int argc, char **argv){
     cJSON *json = cJSON_Parse(data);
 
     char* file_as_string = cJSON_Print(json);
-    printf("Length of the contents of file are %lu", sizeof(file_as_string));
+    // printf("Length of the contents of file are %lu", sizeof(file_as_string));
 
     //struct config_file config_file;
 
@@ -311,6 +365,18 @@ void main(int argc, char **argv){
     const cJSON *no_of_packets = cJSON_GetObjectItemCaseSensitive(json, "noOfPackets");
     const cJSON *ttl = cJSON_GetObjectItemCaseSensitive(json, "TTL");
 
+    if(strcmp(payload->valuestring, ""))
+        strcpy(payload->valuestring, "1000");
+    
+    if(strcmp(inter_measure_time->valuestring, ""))
+        strcpy(inter_measure_time->valuestring, "15");
+    
+    if(strcmp(no_of_packets->valuestring, ""))
+        strcpy(no_of_packets->valuestring, "6000");
+
+    if(strcmp(ttl->valuestring, ""))
+        strcpy(ttl->valuestring, "255");
+
     strcpy(config_file->server_ip, server_ip->valuestring);
     strcpy(config_file->source_port_udp, source_port_udp->valuestring);
     strcpy(config_file->dest_port_udp, dest_port_udp->valuestring);
@@ -319,9 +385,23 @@ void main(int argc, char **argv){
     strcpy(config_file->inter_measure_time, inter_measure_time->valuestring);
     strcpy(config_file->no_of_packets, no_of_packets->valuestring);
     strcpy(config_file->ttl, ttl->valuestring);
+    
+    
+    if(strcmp(config_file->payload, " ")){
+        strcpy(config_file->payload, "1000");
+    }
+    
+    if(strcmp(inter_measure_time->valuestring, " "))
+        strcpy(inter_measure_time->valuestring, "15");
+    
+    if(strcmp(no_of_packets->valuestring, " "))
+        strcpy(no_of_packets->valuestring, "6000");
 
-    printf("Server IP = %s", config_file->server_ip);
+    if(strcmp(ttl->valuestring, " "))
+        strcpy(ttl->valuestring, "255");
 
+    // printf("payload = %s", config_file->payload);
+ 
     char* server_msg = tcp_connection(file_as_string);
 
     // int sockfd, connfd;
@@ -352,12 +432,17 @@ void main(int argc, char **argv){
     // close(sockfd);
 
     //sleep(10);
-    //printf("%s", server_msg);
+    // printf("%s", server_msg);
+    // sleep(4);
+    // udp_connection();
 
     if(server_msg){
-        //udp_connection();
+        // udp_connection();
         udp_packets();
     }
 
-    //udp_packets();
+    // udp_packets();
+
+    //sleep(7);
+    //post_probing(file_as_string);
 }

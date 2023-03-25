@@ -599,7 +599,7 @@ int udp_low_packets(){
   char *interface, *target, *src_ip, *dst_ip;
   struct ip iphdr;
   struct udphdr udphdr;
-  uint8_t *data, *src_mac, *dst_mac, *ether_frame;
+  uint8_t *src_mac, *dst_mac, *ether_frame;
   struct addrinfo hints, *res;
   struct sockaddr_in *ipv4;
   struct sockaddr_ll device;
@@ -609,7 +609,7 @@ int udp_low_packets(){
   // Allocate memory for various arrays.
   src_mac = allocate_ustrmem (6);
   dst_mac = allocate_ustrmem (6);
-  data = allocate_ustrmem (IP_MAXPACKET);
+  // data = allocate_ustrmem (IP_MAXPACKET);
   ether_frame = allocate_ustrmem (IP_MAXPACKET);
   interface = allocate_strmem (40);
   target = allocate_strmem (40);
@@ -700,9 +700,9 @@ int udp_low_packets(){
   // data[2] = 's';
   // data[3] = 't';
 
-  data[1000];
-  memset(data, 0, 1000);
-  datalen = 1000;
+  char data[atoi(config_file->payload)];
+  memset(data, 0, atoi(config_file->payload));
+  datalen = atoi(config_file->payload);
   // IPv4 header
 
   // IPv4 header length (4 bits): Number of 32-bit words in header = 5
@@ -826,7 +826,7 @@ int udp_low_packets(){
   // Free allocated memory.
   free (src_mac);
   free (dst_mac);
-  free (data);
+  // free (data);
   free (ether_frame);
   free (interface);
   free (target);
@@ -843,7 +843,7 @@ int udp_high_packets(){
   char *interface, *target, *src_ip, *dst_ip;
   struct ip iphdr;
   struct udphdr udphdr;
-  uint8_t *data, *src_mac, *dst_mac, *ether_frame;
+  uint8_t *src_mac, *dst_mac, *ether_frame;
   struct addrinfo hints, *res;
   struct sockaddr_in *ipv4;
   struct sockaddr_ll device;
@@ -853,7 +853,7 @@ int udp_high_packets(){
   // Allocate memory for various arrays.
   src_mac = allocate_ustrmem (6);
   dst_mac = allocate_ustrmem (6);
-  data = allocate_ustrmem (IP_MAXPACKET);
+  // data = allocate_ustrmem (IP_MAXPACKET);
   ether_frame = allocate_ustrmem (IP_MAXPACKET);
   interface = allocate_strmem (40);
   target = allocate_strmem (40);
@@ -944,7 +944,7 @@ int udp_high_packets(){
   // data[2] = 's';
   // data[3] = 't';
 
-  data[atoi(config_file->payload)];
+  char data[atoi(config_file->payload)];
   
   datalen = atoi(config_file->payload);
 
@@ -1079,7 +1079,7 @@ int udp_high_packets(){
   // Free allocated memory.
   free (src_mac);
   free (dst_mac);
-  free (data);
+  // free (data);
   free (ether_frame);
   free (interface);
   free (target);

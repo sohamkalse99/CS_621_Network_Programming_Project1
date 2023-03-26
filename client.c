@@ -158,13 +158,13 @@ void low_entropy(int sockfd, struct sockaddr_in serv_addr){
 
     char packet[atoi(config_file->payload)];
 
-    char first_bit = 0;
-    char sec_bit = 0;
+    // char first_bit = 0;
+    // char sec_bit = 0;
     for(int i =0;i<atoi(config_file->no_of_packets);i++){
         memset(packet, 0, atoi(config_file->payload)*sizeof(packet[0])); //initialize all elements of packet with 0 ie low entropy
 
-        //packet[0] = (i>>8) & 0xFF;
-        //packet[1] = i & 0xFF;
+        packet[0] = (i>>8) & 0xFF;
+        packet[1] = i & 0xFF;
         
         /*if(i ==0)
             continue;
@@ -174,8 +174,8 @@ void low_entropy(int sockfd, struct sockaddr_in serv_addr){
                 sec_bit++;
         }*/
 
-        packet[0] = first_bit;
-        packet[1] = sec_bit;
+        // packet[0] = first_bit;
+        // packet[1] = sec_bit;
         // memcpy(packet + sizeof(uint16_t), &packet_id, sizeof(uint16_t));
 
         //printf("Packet id->%d\n", packet_id);
@@ -239,8 +239,8 @@ void high_entropy(int sockfd, struct sockaddr_in serv_addr){
 
         //memcpy(packet + sizeof(uint16_t), &packet_id, sizeof(uint16_t));
         
-        //packet[0] = (i>>8) & 0xFF;
-        //packet[1] = i & 0xFF;
+        packet[0] = (i>>8) & 0xFF;
+        packet[1] = i & 0xFF;
         
         int packet_sent = sendto(sockfd, packet, atoi(config_file->payload), 0, (struct sockaddr*)&serv_addr, sizeof(serv_addr));
         if(packet_sent<0){
@@ -255,7 +255,7 @@ void high_entropy(int sockfd, struct sockaddr_in serv_addr){
 
 void udp_packets(){
 
-    struct sockaddr_in serv_addr;
+    struct sockaddr_in serv_addr, cli_addr;
     bzero(&serv_addr, sizeof(serv_addr)); 
 
     serv_addr.sin_addr.s_addr = inet_addr(config_file->server_ip);
@@ -263,7 +263,19 @@ void udp_packets(){
     serv_addr.sin_port = htons(port);
     serv_addr.sin_family = AF_INET;
     
+    memset(&cli_addr, 0, sizeof(cli_addr));
+
+    cli_addr.sin_family = AF_INET;
+    cli_addr.sin_port = htons(atoi(config_file->source_port_udp));
+
+    
+
     int sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+
+    if(bind(sockfd, (struct sockaddr *)&cli_addr, sizeof(cli_addr))<0){
+        printf("Bind failed");
+        exit(1);
+    }
 
     if(sockfd<0){
         perror("socket");
@@ -272,7 +284,7 @@ void udp_packets(){
 
     if(connect(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr))<0){
         printf("\n Connection Failed \n");
-        exit(0);
+        exit(1);
     }
 
     //set don't fragment bit
@@ -299,7 +311,7 @@ void get_findings(int sockfd, char* file_as_string){
     // char* findings = malloc(20*sizeof(char*));
     read(sockfd, findings, sizeof(findings));
 
-    // printf("Findings->%s", findings);
+    printf("Findings->%s", findings);
 }
 
 
@@ -364,18 +376,6 @@ void main(int argc, char **argv){
     const cJSON *inter_measure_time = cJSON_GetObjectItemCaseSensitive(json, "interMeasureTime");
     const cJSON *no_of_packets = cJSON_GetObjectItemCaseSensitive(json, "noOfPackets");
     const cJSON *ttl = cJSON_GetObjectItemCaseSensitive(json, "TTL");
-
-    if(strcmp(payload->valuestring, ""))
-        strcpy(payload->valuestring, "1000");
-    
-    if(strcmp(inter_measure_time->valuestring, ""))
-        strcpy(inter_measure_time->valuestring, "15");
-    
-    if(strcmp(no_of_packets->valuestring, ""))
-        strcpy(no_of_packets->valuestring, "6000");
-
-    if(strcmp(ttl->valuestring, ""))
-        strcpy(ttl->valuestring, "255");
 
     strcpy(config_file->server_ip, server_ip->valuestring);
     strcpy(config_file->source_port_udp, source_port_udp->valuestring);
@@ -443,6 +443,6 @@ void main(int argc, char **argv){
 
     // udp_packets();
 
-    //sleep(7);
-    //post_probing(file_as_string);
+    sleep(9);
+    post_probing(file_as_string);
 }

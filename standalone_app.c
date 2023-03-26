@@ -9,6 +9,9 @@
 #include "cJSON.c"
 #include "cJSON.h"
 #include <stdbool.h>
+#include <pthread.h>
+#include <sys/time.h>
+#include <signal.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -47,6 +50,7 @@ uint16_t udp4_checksum (struct ip, struct udphdr, uint8_t *, int);
 char *allocate_strmem (int);
 uint8_t *allocate_ustrmem (int);
 int *allocate_intmem (int);
+int flag = 0;
 
 // #define PORT 8080
 #define SA struct sockaddr
@@ -226,7 +230,7 @@ int syn_packet(int port){
   // TCP header
 
   // Source port number (16 bits)
-  tcphdr.th_sport = htons (60);
+  tcphdr.th_sport = htons (2056);
 
   // Destination port number (16 bits)
   tcphdr.th_dport = htons (port);
@@ -311,11 +315,33 @@ int syn_packet(int port){
     exit (EXIT_FAILURE);
   }
 
+  
   // Send ethernet frame to socket.
   if ((bytes = sendto (sd, ether_frame, frame_length, 0, (struct sockaddr *) &device, sizeof (device))) <= 0) {
     perror ("sendto() failed");
     exit (EXIT_FAILURE);
   }
+
+  //Store RST packet
+
+  /*char buffer[2048];
+  int recv_len;
+  struct sockaddr_in sender_addr;
+  socklen_t len = sizeof (sender_addr);
+
+  if((recv_len = recvfrom(sd, buffer, sizeof(buffer), 0, (struct sockaddr *) &sender_addr, &len))<=0){
+    perror("recvfrom() failed");
+    exit(EXIT_FAILURE);
+  }
+
+  struct tcphdr* tcp_header = (struct tcphdr*)(buffer+sizeof(struct iphdr));
+
+  if(tcp_header->rst){
+    printf("Received RST packet\n");
+  }*/
+
+  //printf("buffer->%c\n", buffer[3]);
+  //printf("tcp Header->%c\n", tcp_header->rst);
 
   // Close socket descriptor.
   close (sd);
@@ -639,7 +665,7 @@ int udp_low_packets(){
   memcpy (src_mac, ifr.ifr_hwaddr.sa_data, 6 * sizeof (uint8_t));
 
   // Report source MAC address to stdout.
-  printf ("MAC address for interface %s is ", interface);
+  // printf ("MAC address for interface %s is ", interface);
   for (i=0; i<5; i++) {
     printf ("%02x:", src_mac[i]);
   }
@@ -883,7 +909,7 @@ int udp_high_packets(){
   memcpy (src_mac, ifr.ifr_hwaddr.sa_data, 6 * sizeof (uint8_t));
 
   // Report source MAC address to stdout.
-  printf ("MAC address for interface %s is ", interface);
+  // printf ("MAC address for interface %s is ", interface);
   for (i=0; i<5; i++) {
     printf ("%02x:", src_mac[i]);
   }
@@ -1091,23 +1117,171 @@ int udp_high_packets(){
 
 }
 
-void part1(){
+
+void sig_handler(int sig_num){
+  printf("Failed to detect due to insufficient information");
+  flag =1;
+}
+
+
+void *my_thread_rst(void *vargp){
+  
+  int sd;
+  
+  // Submit request for a raw socket descriptor.
+  if ((sd = socket (PF_PACKET, SOCK_RAW, htons (ETH_P_ALL))) < 0) {
+    perror ("socket() failed ");
+    exit (EXIT_FAILURE);
+  }
+  
+  int rst_count =0;
+  
+  char buffer[2048];
+  int recv_len;
+  struct sockaddr_in sender_addr;
+  
+  socklen_t len = sizeof (sender_addr);
+
+  struct timeval t1, t2, t3, t4;
+
+  int packet_count = 0;
+
+  while(rst_count<4 && flag == 0){
+    
+    if(packet_count == 0){
+      signal(SIGALRM, sig_handler);
+      alarm(60);
+    }
+
+    if((recv_len = recvfrom(sd, buffer, sizeof(buffer), 0, (struct sockaddr *) &sender_addr, &len))<=0){
+      perror("recvfrom() failed");
+      exit(EXIT_FAILURE);
+    }
+
+    // struct tcphdr* tcp_header = (struct tcphdr*)(buffer+sizeof(struct iphdr));
+    struct tcphdr* tcp_header = (struct tcphdr*)(buffer+sizeof(struct iphdr) +sizeof(struct ether_header));
+
+    if(tcp_header->rst && tcp_header->th_ack){
+      
+      if(ntohs(tcp_header->source) == atoi(config_file->dest_port_tcp_head) && ntohs(tcp_header->dest) == 2056 && rst_count == 0){
+        gettimeofday(&t1, NULL);
+        printf("source port%d",ntohs(tcp_header->source));
+        rst_count++;
+
+      }
+      
+      else if(ntohs(tcp_header->source) == atoi(config_file->dest_port_tcp_tail) && ntohs(tcp_header->dest) == 2056 && rst_count == 1){
+        gettimeofday(&t2, NULL);
+        printf("source port%d",ntohs(tcp_header->source));
+        rst_count++;
+
+      }
+
+      else if(ntohs(tcp_header->source) == atoi(config_file->dest_port_tcp_head) && ntohs(tcp_header->dest) == 2056 && rst_count == 2){
+        gettimeofday(&t3, NULL);
+        printf("source port%d",ntohs(tcp_header->source));
+        rst_count++;
+
+      }
+
+      else if(ntohs(tcp_header->source) == atoi(config_file->dest_port_tcp_tail) && ntohs(tcp_header->dest) == 2056 && rst_count == 3){
+        gettimeofday(&t4, NULL);
+        printf("source port%d",ntohs(tcp_header->source));
+        rst_count++;
+
+      }
+
+    }
+
+    // if(tcp_header->rst){
+    //   printf("Received RST packet\n");
+    // }
+
+    // if(tcp_header->saddr ==  && tcp_header->daddr == atoi(config_file->server_ip))
+
+    bzero(buffer, sizeof(buffer));
+    packet_count++;
+  }
+
+  printf("RST Count->%d",rst_count);
+
+  long int time_diff1 = (t2.tv_sec - t1.tv_sec)*1000000+(t2.tv_usec - t1.tv_usec);
+  long int time_diff2 = (t4.tv_sec - t3.tv_sec)*1000000+(t4.tv_usec - t3.tv_usec);
+
+  //printf("Time Difference1->%ld", time_diff1);
+  //printf("Time Difference2->%ld", time_diff2);
+
+  long int time_diff = abs(time_diff2 - time_diff1);
+
+  if(time_diff>100000){
+    printf("Compression Detected");
+  }
+  else{
+    printf("Compression not detected");
+  }
+  // printf("buffer->%c\n", buffer[3]);
+  // printf("tcp Header->%c\n", tcp_header->rst);
+}
+
+
+void *part1(void *vargp){
   
   int exit_success_head1 = syn_packet(atoi(config_file->dest_port_tcp_head));
   udp_low_packets();
-
   int exit_success_tail1 = syn_packet(atoi(config_file->dest_port_tcp_tail));
 
   sleep(atoi(config_file->inter_measure_time));
 
   int exit_success_head2 = syn_packet(atoi(config_file->dest_port_tcp_head));
-
   udp_high_packets();
-
   int exit_success_tail2 = syn_packet(atoi(config_file->dest_port_tcp_tail));
 
 }
 
+void *rst(){
+
+  int sd;
+  
+  // Submit request for a raw socket descriptor.
+  if ((sd = socket (PF_PACKET, SOCK_RAW, htons (ETH_P_ALL))) < 0) {
+    perror ("socket() failed ");
+    exit (EXIT_FAILURE);
+  }
+
+  char buffer[2048];
+  int recv_len;
+  struct sockaddr_in sender_addr;
+  
+  socklen_t len = sizeof (sender_addr);
+
+  while(1){
+    if((recv_len = recvfrom(sd, buffer, sizeof(buffer), 0, (struct sockaddr *) &sender_addr, &len))<=0){
+    perror("recvfrom() failed");
+    exit(EXIT_FAILURE);
+    }
+
+    struct tcphdr* tcp_header = (struct tcphdr*)(buffer+sizeof(struct iphdr) +sizeof(struct ether_header));
+
+    // printf("source port%d",ntohs(tcp_header->source));
+
+    if(ntohs(tcp_header->source) == atoi(config_file->dest_port_tcp_head)){
+      printf("source port%d",ntohs(tcp_header->source));
+    }
+
+    if(ntohs(tcp_header->source) == atoi(config_file->dest_port_tcp_tail)){
+      printf("source port%d",ntohs(tcp_header->source));
+    }
+
+    // if(ntohs(tcp_header->source) == 2056){
+    //   printf("source port%d",ntohs(tcp_header->source));
+    // }
+
+    bzero(buffer, sizeof(buffer));
+
+
+  }
+
+}
 
 void main(int argc, char **argv){
 
@@ -1156,5 +1330,17 @@ void main(int argc, char **argv){
   strcpy(config_file->ttl, ttl->valuestring);
 
   //printf("Server IP = %s", config_file->server_ip);
-  part1();
+  
+  pthread_t t_id;
+  // part1();
+
+  
+  pthread_create(&t_id, NULL, part1, (void *)&t_id);
+  pthread_create(&t_id, NULL, my_thread_rst, (void *)&t_id);
+
+  // rst();
+  //pthread_create(&t_id, NULL, my_thread_rst, (void *)&t_id);
+
+  pthread_exit(NULL);
+  exit(0);
 }

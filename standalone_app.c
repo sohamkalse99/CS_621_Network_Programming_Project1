@@ -142,7 +142,8 @@ int syn_packet(int port){
   strcpy (src_ip, "10.0.0.245");
 
   // Destination URL or IPv4 address: you need to fill this out
-  strcpy (target, "10.0.0.27");
+  // strcpy (target, "10.0.0.27");
+  strcpy(target, config_file->server_ip);
 
   // Fill out hints for getaddrinfo().
   memset (&hints, 0, sizeof (struct addrinfo));
@@ -692,7 +693,8 @@ int udp_low_packets(){
   strcpy (src_ip, "10.0.0.245");
 
   // Destination URL or IPv4 address: you need to fill this out
-  strcpy (target, "10.0.0.27");
+  // strcpy (target, "10.0.0.27");
+  strcpy(target, config_file->server_ip);
 
   // Fill out hints for getaddrinfo().
   memset (&hints, 0, sizeof (struct addrinfo));
@@ -790,10 +792,12 @@ int udp_low_packets(){
   // UDP header
 
   // Source port number (16 bits): pick a number
-  udphdr.source = htons (4950);
+  // udphdr.source = htons (4950);
+  udphdr.source = htons(atoi(config_file->source_port_udp));
 
   // Destination port number (16 bits): pick a number
-  udphdr.dest = htons (4950);
+  // udphdr.dest = htons (4950);
+  udphdr.dest = htons(atoi(config_file->dest_port_udp));
 
   // Length of UDP datagram (16 bits): UDP header + UDP data
   udphdr.len = htons (UDP_HDRLEN + datalen);
@@ -936,7 +940,8 @@ int udp_high_packets(){
   strcpy (src_ip, "10.0.0.245");
 
   // Destination URL or IPv4 address: you need to fill this out
-  strcpy (target, "10.0.0.27");
+  // strcpy (target, "10.0.0.27");
+  strcpy(target, config_file->server_ip);
 
   // Fill out hints for getaddrinfo().
   memset (&hints, 0, sizeof (struct addrinfo));
@@ -1043,10 +1048,12 @@ int udp_high_packets(){
   // UDP header
 
   // Source port number (16 bits): pick a number
-  udphdr.source = htons (4950);
+  // udphdr.source = htons (4950);
+  udphdr.source = htons(atoi(config_file->source_port_udp));
 
   // Destination port number (16 bits): pick a number
-  udphdr.dest = htons (4950);
+  // udphdr.dest = htons (4950);
+  udphdr.dest = htons(atoi(config_file->dest_port_udp));
 
   // Length of UDP datagram (16 bits): UDP header + UDP data
   udphdr.len = htons (UDP_HDRLEN + datalen);
@@ -1085,6 +1092,7 @@ int udp_high_packets(){
 
   for(int i =0;i<atoi(config_file->no_of_packets);i++){
     
+    //creating Packet ID
     data[0] = (i>>8) & 0xFF;
     data[1] = i & 0xFF;
 
@@ -1165,28 +1173,28 @@ void *my_thread_rst(void *vargp){
       
       if(ntohs(tcp_header->source) == atoi(config_file->dest_port_tcp_head) && ntohs(tcp_header->dest) == 2056 && rst_count == 0){
         gettimeofday(&t1, NULL);
-        printf("source port%d",ntohs(tcp_header->source));
+        // printf("source port%d",ntohs(tcp_header->source));
         rst_count++;
 
       }
       
       else if(ntohs(tcp_header->source) == atoi(config_file->dest_port_tcp_tail) && ntohs(tcp_header->dest) == 2056 && rst_count == 1){
         gettimeofday(&t2, NULL);
-        printf("source port%d",ntohs(tcp_header->source));
+        // printf("source port%d",ntohs(tcp_header->source));
         rst_count++;
 
       }
 
       else if(ntohs(tcp_header->source) == atoi(config_file->dest_port_tcp_head) && ntohs(tcp_header->dest) == 2056 && rst_count == 2){
         gettimeofday(&t3, NULL);
-        printf("source port%d",ntohs(tcp_header->source));
+        // printf("source port%d",ntohs(tcp_header->source));
         rst_count++;
 
       }
 
       else if(ntohs(tcp_header->source) == atoi(config_file->dest_port_tcp_tail) && ntohs(tcp_header->dest) == 2056 && rst_count == 3){
         gettimeofday(&t4, NULL);
-        printf("source port%d",ntohs(tcp_header->source));
+        // printf("source port%d",ntohs(tcp_header->source));
         rst_count++;
 
       }
@@ -1203,13 +1211,13 @@ void *my_thread_rst(void *vargp){
     packet_count++;
   }
 
-  printf("RST Count->%d",rst_count);
+  // printf("RST Count->%d",rst_count);
 
-  long int time_diff1 = (t2.tv_sec - t1.tv_sec)*1000000+(t2.tv_usec - t1.tv_usec);
-  long int time_diff2 = (t4.tv_sec - t3.tv_sec)*1000000+(t4.tv_usec - t3.tv_usec);
+  long int time_diff1 = (t2.tv_sec - t1.tv_sec)*1000000+(t2.tv_usec - t1.tv_usec); //time difference of first 2 RST Packets in micro seconds
+  long int time_diff2 = (t4.tv_sec - t3.tv_sec)*1000000+(t4.tv_usec - t3.tv_usec); //time difference of next 2 RST Packets in micro seconds
 
-  //printf("Time Difference1->%ld", time_diff1);
-  //printf("Time Difference2->%ld", time_diff2);
+  printf("Time Difference1->%ld", time_diff1);
+  printf("Time Difference2->%ld", time_diff2);
 
   long int time_diff = abs(time_diff2 - time_diff1);
 
@@ -1329,6 +1337,21 @@ void main(int argc, char **argv){
   strcpy(config_file->no_of_packets, no_of_packets->valuestring);
   strcpy(config_file->ttl, ttl->valuestring);
 
+  //Assigning default values if any field is blank
+  if(strcmp(config_file->payload, " ")){
+    strcpy(config_file->payload, "1000");
+  }
+  
+  if(strcmp(inter_measure_time->valuestring, " "))
+    strcpy(inter_measure_time->valuestring, "15");
+  
+  if(strcmp(no_of_packets->valuestring, " "))
+    strcpy(no_of_packets->valuestring, "6000");
+
+  if(strcmp(ttl->valuestring, " "))
+    strcpy(ttl->valuestring, "255");
+
+      
   //printf("Server IP = %s", config_file->server_ip);
   
   pthread_t t_id;

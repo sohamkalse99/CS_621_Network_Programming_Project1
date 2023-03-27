@@ -156,7 +156,7 @@ void low_entropy(int sockfd, struct sockaddr_in serv_addr){
     
     uint16_t packet_id = 0; //initialize packet_id to zero
 
-    char packet[atoi(config_file->payload)];
+    unsigned char packet[atoi(config_file->payload)];
 
     // char first_bit = 0;
     // char sec_bit = 0;
@@ -183,6 +183,7 @@ void low_entropy(int sockfd, struct sockaddr_in serv_addr){
             printf("%d", packet[j]);
         }*/
 
+        // usleep(200);//250 milisec
         int packet_sent = sendto(sockfd, packet, atoi(config_file->payload), 0, (struct sockaddr*)&serv_addr, sizeof(serv_addr));
         if(packet_sent<0){
             printf("Error in LE packet id %d\n", packet_id);
@@ -197,7 +198,7 @@ void high_entropy(int sockfd, struct sockaddr_in serv_addr){
     //Read data from file and store in an array to create payload
 
     int ptr = 0;
-    char packet[atoi(config_file->payload)];
+    unsigned char packet[atoi(config_file->payload)];
 
     FILE *fp = fopen("HighEntropyData","r");
 
@@ -242,6 +243,7 @@ void high_entropy(int sockfd, struct sockaddr_in serv_addr){
         packet[0] = (i>>8) & 0xFF;
         packet[1] = i & 0xFF;
         
+        // usleep(200); //250 milisec
         int packet_sent = sendto(sockfd, packet, atoi(config_file->payload), 0, (struct sockaddr*)&serv_addr, sizeof(serv_addr));
         if(packet_sent<0){
             printf("Error in HE packet id %d\n", packet_id);
@@ -443,6 +445,6 @@ void main(int argc, char **argv){
 
     // udp_packets();
 
-    sleep(9);
+    sleep(8);
     post_probing(file_as_string);
 }

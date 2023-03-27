@@ -26,6 +26,7 @@ struct config_file{
 };
 
 struct config_file* config_file;
+
 bool create_json(char* buffer){
 
     cJSON *json = cJSON_Parse(buffer);
@@ -146,9 +147,9 @@ bool get_client_data(int connfd){
 
 
 bool tcp_connection(char* cmd_line_arg){
-    // printf()
+
     int sockfd, connfd, len;
-    struct sockaddr_in servaddr, cli;
+    struct sockaddr_in serv_addr, cli;
 
     sockfd = socket(AF_INET, SOCK_STREAM, 0);//ipv4/6, connection_oriented/connection_less, protocol
 
@@ -159,14 +160,14 @@ bool tcp_connection(char* cmd_line_arg){
         printf("Socket successfully created\n");
     }
     
-    bzero(&servaddr, sizeof(servaddr)); //set I guess elements of struct bzero to 0
+    bzero(&serv_addr, sizeof(serv_addr)); //set I guess elements of struct bzero to 0
 
-    servaddr.sin_family = AF_INET;
-    servaddr.sin_addr.s_addr = htonl(INADDR_ANY); //assigns s_addr = 0.0.0.0
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_addr.s_addr = htonl(INADDR_ANY); //assigns s_addr = 0.0.0.0
     int port = atoi(cmd_line_arg);
-    servaddr.sin_port = htons(port);
+    serv_addr.sin_port = htons(port);
 
-    if((bind(sockfd, (SA*)&servaddr, sizeof(servaddr))) != 0){
+    if((bind(sockfd, (SA*)&serv_addr, sizeof(serv_addr))) != 0){
         printf("socket binding failed\n");
         exit(0);        
     }else
@@ -192,7 +193,7 @@ bool tcp_connection(char* cmd_line_arg){
     // bool isConnected =false;
     // char* buffer = malloc(1000);
     bool json_created =  get_client_data(connfd);
-    printf("After get client method");
+    // printf("After get client method");
     // if(sizeof(buffer)>0)
     //     isConnected = true;
     
@@ -248,18 +249,22 @@ void sig_handler(int sig_num){
     //exit(0);
 }
 
-long int low_entropy(int listenfd, struct sockaddr_in cli_addr,int len){
+long int low_entropy(int listenfd, struct sockaddr_in cli_addr, int len){
 
     struct timeval t1, t2;
 
     // int packet[998];
-    char packet[atoi(config_file->payload)];
+    unsigned char packet[atoi(config_file->payload)];
 
     for(int i =0;i<atoi(config_file->no_of_packets) && flag == 0;i++){
         //printf("i = %d\n",i);
         
         
         int n = recvfrom(listenfd, packet, sizeof(packet), MSG_WAITALL, (struct sockaddr*)&cli_addr, &len);
+
+        // Packet ID retrieval 
+        // int int_value = (packet[0] << 8 | packet[1]);
+        // printf("%d\t", int_value);
 
         if(i==0 && n>0){
             gettimeofday(&t1, NULL);
@@ -284,7 +289,7 @@ long int low_entropy(int listenfd, struct sockaddr_in cli_addr,int len){
 long int high_entropy(int listenfd, struct sockaddr_in cli_addr,int len){
     struct timeval t1, t2;
 
-    char packet[atoi(config_file->payload)];
+    unsigned char packet[atoi(config_file->payload)];
     flag = 0;//Check whether this will work 
 
     for(int i =0;i<atoi(config_file->no_of_packets) && flag == 0;i++){
@@ -333,7 +338,7 @@ long int udp_packets(){
 
     len = sizeof(cli_addr);
 
-    printf("Before Low Entropy method");
+    // printf("Before Low Entropy method");
     long int delta_low = low_entropy(listenfd, cli_addr,len);
 
     
@@ -361,7 +366,7 @@ void send_findings(int connfd, char* findings){
 }
 void post_probing(char* cmd_line_arg, char* findings){
     int sockfd, connfd, len;
-    struct sockaddr_in servaddr, cli;
+    struct sockaddr_in serv_addr, cli;
 
     sockfd = socket(AF_INET, SOCK_STREAM, 0);//ipv4/6, connection_oriented/connection_less, protocol
 
@@ -372,12 +377,12 @@ void post_probing(char* cmd_line_arg, char* findings){
         printf("Socket successfully created\n");
     }
     
-    bzero(&servaddr, sizeof(servaddr)); //set I guess elements of struct bzero to 0
+    bzero(&serv_addr, sizeof(serv_addr)); //set I guess elements of struct bzero to 0
 
-    servaddr.sin_family = AF_INET;
-    servaddr.sin_addr.s_addr = htonl(INADDR_ANY); //assigns s_addr = 0.0.0.0
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_addr.s_addr = htonl(INADDR_ANY); //assigns s_addr = 0.0.0.0
     int port = atoi(cmd_line_arg);
-    servaddr.sin_port = htons(port);
+    serv_addr.sin_port = htons(port);
 
     int sock, optval = 1;
 
@@ -390,7 +395,7 @@ void post_probing(char* cmd_line_arg, char* findings){
         perror("couldn't reuse the address");
         abort();
     }
-    if((bind(sockfd, (SA*)&servaddr, sizeof(servaddr))) != 0){
+    if((bind(sockfd, (SA*)&serv_addr, sizeof(serv_addr))) != 0){
         printf("socket binding failed\n");
         exit(0);        
     }else
@@ -425,14 +430,14 @@ void main(int argc, char **argv){
 
     // bool config_received = 
     bool json_created = tcp_connection(argv[1]);
-    printf("config file sent");
+    // printf("config file sent");
     // printf("Dest Port -> %s\n", config_file->dest_port_udp);
     // udp_connection();
     //char* findings;
     // sleep(5);
     long int time_difference = udp_packets();
 
-    /*char findings[100];
+    char findings[100];
     bzero(findings, sizeof(findings));
     if(time_difference>100000){//time in micro seconds
         //printf("Compression Detected");
@@ -440,9 +445,9 @@ void main(int argc, char **argv){
     }else{
         //printf("No Compression Detected");
         strcpy(findings, "No Compression Detected");
-    }*/
+    }
 
     // sleep(5);
     
-    //post_probing(argv[1], findings);
+    post_probing(argv[1], findings);
 }

@@ -49,9 +49,7 @@ bool create_json(char* buffer){
     const cJSON *ttl = cJSON_GetObjectItemCaseSensitive(json, "TTL");
 
 
-    // printf("Server IP = %s", serverIP->valuestring);
-
-    // struct config_file config_file;
+ 
     strcpy(config_file->server_ip, server_ip->valuestring);
     strcpy(config_file->source_port_udp, source_port_udp->valuestring);
     strcpy(config_file->dest_port_udp, dest_port_udp->valuestring);
@@ -61,7 +59,6 @@ bool create_json(char* buffer){
     strcpy(config_file->no_of_packets, no_of_packets->valuestring);
     strcpy(config_file->ttl, ttl->valuestring);
 
-    // printf("Server IP = %s", config_file->server_ip);
 
     return json_created;
 }
@@ -69,55 +66,16 @@ bool create_json(char* buffer){
 bool get_client_data(int connfd){
     char buffer[2000];
 
-    //char* buffer = malloc(sizeof(*buffer));
 
     int n;
     
-    /*while(1){
-
-        //bzero(buffer, 8000);
-
-        read(connfd, buffer, sizeof(buffer));// read message from client and store it in buffer
-        //printf("%s", buffer);
-        //printf("From Client: %s\t To Client: ", buffer);
-        //bzero(buffer, 8000);
-        n=0;
-        
-
-        //while((buffer[n++] = getchar())!='\n') // copyserver's message in a buffer
-        //;
-
-        //write(connfd, buffer, sizeof(buffer)); // send message to the client
-
-        // cJSON *json = cJSON_Parse(buffer);
-        // char* string = cJSON_Print(json);
-        // printf("%s", string);
-        // if(json == NULL){
-        //     printf("---------------");
-        //     printf("Error parsing json string:%s\n", cJSON_GetErrorPtr());
-        //     printf("---------------");
-        //     exit(1);
-        // }
-        // const cJSON *serverIP = cJSON_GetObjectItemCaseSensitive(json, "serverIP");
-
-        // printf("Server IP = %s", serverIP->valuestring);
-         
-        if(strncmp("exit", buffer, 4)==0){
-            printf("Server Exit....\n");
-            break;
-        }
-    }*/
+    
 
     bzero(buffer, sizeof(buffer));
     read(connfd, buffer, sizeof(buffer));// read message from client and store it in buffer
 
     
-    // char* ptr = malloc(strlen(buffer)+1);
     
-    // strcpy(ptr, buffer);
-    // printf("%s",buffer);
-
-    // printf("%s", buffer);
     bool json_created = create_json(buffer);
 
     bzero(buffer, sizeof(buffer));
@@ -125,21 +83,6 @@ bool get_client_data(int connfd){
     write(connfd, buffer, sizeof(buffer));
 
     
-    // printf("pointer->%s", ptr);
-    // return strdup(ptr);
-    // return ptr;
-    // cJSON *json = cJSON_Parse(buffer);
-    
-    // if(json == NULL){
-    //     printf("---------------");
-    //     printf("Error parsing json string:%s\n", cJSON_GetErrorPtr());
-    //     printf("---------------");
-    //     exit(1);
-    // }
-
-    // const cJSON *serverIP = cJSON_GetObjectItemCaseSensitive(json, "serverIP");
-
-    // printf("Server IP = %s", serverIP->valuestring);
     
     return json_created;
 }
@@ -190,21 +133,9 @@ bool tcp_connection(char* cmd_line_arg){
         printf("Client accepted by the server\n");
 
     
-    // bool isConnected =false;
-    // char* buffer = malloc(1000);
+ 
     bool json_created =  get_client_data(connfd);
-    // printf("After get client method");
-    // if(sizeof(buffer)>0)
-    //     isConnected = true;
     
-    // bool json_created = create_json(buffer);
-    // printf("After create json");
-
-    // cJSON *json = cJSON_Parse(buffer);
-    
-    // const cJSON *serverIP = cJSON_GetObjectItem(json, "serverIP");
-
-    // printf("Server IP = %s", serverIP->valuestring);
 
     close(sockfd);
 
@@ -240,7 +171,6 @@ void udp_connection(){
     printf("%s", buffer);
     
 
-    //sendto(listenfd, message, 1000, 0, (struct sockaddr*)&cli_addr, sizeof(cli_addr));
 }
 
 void sig_handler(int sig_num){
@@ -253,11 +183,9 @@ long int low_entropy(int listenfd, struct sockaddr_in cli_addr, int len){
 
     struct timeval t1, t2;
 
-    // int packet[998];
     unsigned char packet[atoi(config_file->payload)];
 
     for(int i =0;i<atoi(config_file->no_of_packets) && flag == 0;i++){
-        //printf("i = %d\n",i);
         
         
         int n = recvfrom(listenfd, packet, sizeof(packet), MSG_WAITALL, (struct sockaddr*)&cli_addr, &len);
@@ -273,13 +201,11 @@ long int low_entropy(int listenfd, struct sockaddr_in cli_addr, int len){
             alarm(10);
         }
 
-        // printf("Packet->%d\n", i);
-        // packet[n] = '\0';
+        
         if(i>0 && n>0)
             gettimeofday(&t2, NULL);
     }
 
-    //printf("Outside for loop");
 
     long int time_diff = (t2.tv_sec - t1.tv_sec)*1000000+(t2.tv_usec - t1.tv_usec);
     printf("TD of l data is %ld", time_diff);
@@ -308,10 +234,7 @@ long int high_entropy(int listenfd, struct sockaddr_in cli_addr,int len){
             gettimeofday(&t2, NULL);
         }
 
-        /*if(i%1000 == 0)
-        {
-            printf("HEPacket");
-        }*/
+
     }
 
     long int time_diff = (t2.tv_sec - t1.tv_sec)*1000000+(t2.tv_usec - t1.tv_usec);
@@ -346,15 +269,6 @@ long int udp_packets(){
 
     return abs(delta_high - delta_low);
     
-    /*if(abs(delta_high - delta_low)>100000){//time in micro seconds
-        printf("Compression Detected");
-        strcpy(findings, "Compression Detected");
-    }else{
-        printf("No Compression Detected");
-        strcpy(findings, "No Compression Detected");
-    }
-
-    return findings;*/
 }
 
 void send_findings(int connfd, char* findings){
@@ -428,13 +342,8 @@ void main(int argc, char **argv){
         return;
     }
 
-    // bool config_received = 
     bool json_created = tcp_connection(argv[1]);
-    // printf("config file sent");
-    // printf("Dest Port -> %s\n", config_file->dest_port_udp);
-    // udp_connection();
-    //char* findings;
-    // sleep(5);
+
     long int time_difference = udp_packets();
 
     char findings[100];

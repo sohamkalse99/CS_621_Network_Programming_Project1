@@ -56,16 +56,18 @@ int flag = 0;
 #define SA struct sockaddr
 
 struct config_file{
-    char server_ip[50];
-    char source_port_udp[10];
-    char dest_port_udp[10];
-    char dest_port_tcp_head[40];
-    char dest_port_tcp_tail[40];
-    char port_tcp[10];
-    char payload[50];
-    char inter_measure_time[50];
-    char no_of_packets[50];
-    char ttl[50];
+
+  char client_ip[50];
+  char server_ip[50];
+  char source_port_udp[10];
+  char dest_port_udp[10];
+  char dest_port_tcp_head[40];
+  char dest_port_tcp_tail[40];
+  char port_tcp[10];
+  char payload[50];
+  char inter_measure_time[50];
+  char no_of_packets[50];
+  char ttl[50];
 };
 
 struct config_file* config_file;
@@ -139,7 +141,8 @@ int syn_packet(int port){
   dst_mac[5] = 0x2d;
 
   // Source IPv4 address: you need to fill this out
-  strcpy (src_ip, "10.0.0.245");
+  // strcpy (src_ip, "10.0.0.245");
+  strcpy(src_ip, config_file->client_ip);
 
   // Destination URL or IPv4 address: you need to fill this out
   // strcpy (target, "10.0.0.27");
@@ -671,7 +674,8 @@ int udp_low_packets(){
   dst_mac[5] = 0x2d;
 
   // Source IPv4 address: you need to fill this out
-  strcpy (src_ip, "10.0.0.245");
+  // strcpy (src_ip, "10.0.0.245");
+  strcpy(src_ip, config_file->client_ip);
 
   // Destination URL or IPv4 address: you need to fill this out
   // strcpy (target, "10.0.0.27");
@@ -918,7 +922,8 @@ int udp_high_packets(){
   dst_mac[5] = 0x2d;
 
   // Source IPv4 address: you need to fill this out
-  strcpy (src_ip, "10.0.0.245");
+  // strcpy (src_ip, "10.0.0.245");
+  strcpy(src_ip, config_file->client_ip);
 
   // Destination URL or IPv4 address: you need to fill this out
   // strcpy (target, "10.0.0.27");
@@ -1249,6 +1254,7 @@ void main(int argc, char **argv){
 
   //struct config_file config_file;
 
+  const cJSON *client_ip = cJSON_GetObjectItemCaseSensitive(json, "clientIP");
   const cJSON *server_ip = cJSON_GetObjectItemCaseSensitive(json, "serverIP");
   const cJSON *source_port_udp = cJSON_GetObjectItemCaseSensitive(json, "sourcePortUDP");
   const cJSON *dest_port_udp = cJSON_GetObjectItemCaseSensitive(json, "destPortUDP");
@@ -1260,6 +1266,7 @@ void main(int argc, char **argv){
   const cJSON *no_of_packets = cJSON_GetObjectItemCaseSensitive(json, "noOfPackets");
   const cJSON *ttl = cJSON_GetObjectItemCaseSensitive(json, "TTL");
 
+  strcpy(config_file->client_ip, client_ip->valuestring);
   strcpy(config_file->server_ip, server_ip->valuestring);
   strcpy(config_file->source_port_udp, source_port_udp->valuestring);
   strcpy(config_file->dest_port_udp, dest_port_udp->valuestring);

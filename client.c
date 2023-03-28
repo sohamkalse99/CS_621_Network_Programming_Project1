@@ -13,6 +13,8 @@
 #define SA struct sockaddr
 
 struct config_file{
+    
+    char client_ip[50];
     char server_ip[50];
     char source_port_udp[10];
     char dest_port_udp[10];
@@ -126,7 +128,7 @@ void low_entropy(int sockfd, struct sockaddr_in serv_addr){
         
         
 
-        // usleep(200);//250 milisec
+        // usleep(150);//250 milisec
         int packet_sent = sendto(sockfd, packet, atoi(config_file->payload), 0, (struct sockaddr*)&serv_addr, sizeof(serv_addr));
         if(packet_sent<0){
             printf("Error in LE packet id %d\n", packet_id);
@@ -164,7 +166,7 @@ void high_entropy(int sockfd, struct sockaddr_in serv_addr){
         packet[0] = (i>>8) & 0xFF;
         packet[1] = i & 0xFF;
         
-        // usleep(200); //250 milisec
+        // usleep(150); //200 milisec
         int packet_sent = sendto(sockfd, packet, atoi(config_file->payload), 0, (struct sockaddr*)&serv_addr, sizeof(serv_addr));
         if(packet_sent<0){
             printf("Error in HE packet id %d\n", packet_id);
@@ -284,7 +286,7 @@ void main(int argc, char **argv){
 
     char* file_as_string = cJSON_Print(json);
 
-
+    const cJSON *client_ip = cJSON_GetObjectItemCaseSensitive(json, "clientIP");
     const cJSON *server_ip = cJSON_GetObjectItemCaseSensitive(json, "serverIP");
     const cJSON *source_port_udp = cJSON_GetObjectItemCaseSensitive(json, "sourcePortUDP");
     const cJSON *dest_port_udp = cJSON_GetObjectItemCaseSensitive(json, "destPortUDP");
@@ -294,6 +296,7 @@ void main(int argc, char **argv){
     const cJSON *no_of_packets = cJSON_GetObjectItemCaseSensitive(json, "noOfPackets");
     const cJSON *ttl = cJSON_GetObjectItemCaseSensitive(json, "TTL");
 
+    strcpy(config_file->client_ip, client_ip->valuestring);
     strcpy(config_file->server_ip, server_ip->valuestring);
     strcpy(config_file->source_port_udp, source_port_udp->valuestring);
     strcpy(config_file->dest_port_udp, dest_port_udp->valuestring);

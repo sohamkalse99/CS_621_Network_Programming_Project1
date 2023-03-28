@@ -1,7 +1,10 @@
 {
+  "clientIP": "10.0.0.245",
   "serverIP": "10.0.0.27",
   "sourcePortUDP":"9876",
   "destPortUDP":"8765",
+  "destPortTCPHead":"2000",
+  "destPortTCPTail":"2049",
   "portTCP": "8787",
   "payload": "1000",
   "interMeasureTime": "15",

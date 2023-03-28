@@ -27,6 +27,15 @@ struct config_file{
 
 struct config_file* config_file;
 
+/**
+ * 
+ * Here conversation between client and server take place
+ * 
+ * @param sockfd
+ * @param file_as_string A character pointer
+ * 
+ * @return character pointer
+*/
 char* converse(int sockfd, char *file_as_string){
     char buffer[1024];
     int n;
@@ -49,6 +58,13 @@ char* converse(int sockfd, char *file_as_string){
     
 }
 
+/**
+ * Here TCP connection takes place and config file is passed to the server from the client
+ * 
+ * @param file_as_string A character pointer
+ * 
+ * @return character pointer
+*/
 char* tcp_connection(char* file_as_string){
     int sockfd, connfd;
     struct sockaddr_in servaddr, cli;
@@ -82,36 +98,14 @@ char* tcp_connection(char* file_as_string){
     return buffer;
 }
 
-void udp_connection(){
-    
-    char buffer[100];
-    char* message = "Hello Server";
-
-    int sockfd,n;
-
-    struct sockaddr_in serv_addr;
 
 
-    bzero(&serv_addr, sizeof(serv_addr));
-    serv_addr.sin_addr.s_addr = inet_addr(config_file->server_ip);
-    int port = atoi(config_file->dest_port_udp);
-    serv_addr.sin_port = htons(port);
-    serv_addr.sin_family = AF_INET;
-
-    sockfd = socket(AF_INET, SOCK_DGRAM, 0);
-
-    if(connect(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr))<0){
-        printf("\n Connection Failed \n");
-        exit(0);
-    }
-
-    sendto(sockfd, message, 1000, 0, (struct sockaddr*)NULL, sizeof(serv_addr));
-    printf("Message sent to server");
-
-
-    close(sockfd);
-}
-
+/**
+ * Here low entropy packets are created and sent
+ * 
+ * @param sockfd
+ * @param serv_addr
+*/
 void low_entropy(int sockfd, struct sockaddr_in serv_addr){
     
     uint16_t packet_id = 0; //initialize packet_id to zero
@@ -138,7 +132,14 @@ void low_entropy(int sockfd, struct sockaddr_in serv_addr){
     }
 }
 
-void high_entropy(int sockfd, struct sockaddr_in serv_addr){
+/**
+ * Here high entropy packets are created and sent
+ * 
+ * @param sockfd
+ * @param serv_addr
+*/
+void 
+high_entropy(int sockfd, struct sockaddr_in serv_addr){
     //Read data from file and store in an array to create payload
 
     int ptr = 0;
@@ -177,7 +178,11 @@ void high_entropy(int sockfd, struct sockaddr_in serv_addr){
     fclose(fp);
 }
 
-void udp_packets(){
+/**
+ * Here low and high entropy UDP packets are created and sent to the server
+*/
+void 
+udp_packets(){
 
     struct sockaddr_in serv_addr, cli_addr;
     bzero(&serv_addr, sizeof(serv_addr)); 
@@ -227,7 +232,14 @@ void udp_packets(){
 
 }
 
-void get_findings(int sockfd, char* file_as_string){
+/**
+ * 
+ * Here information from the server is take in an array
+ * @param sockfd
+ * @param file_as_string
+*/
+void 
+get_findings(int sockfd, char* file_as_string){
     char findings[100];
 
     bzero(findings, sizeof(findings));
@@ -237,8 +249,13 @@ void get_findings(int sockfd, char* file_as_string){
     printf("Findings->%s", findings);
 }
 
-
-void post_probing(char* file_as_string){
+/**
+ * Here TCP connection takes place and the result is taken from the server and displayed on the console
+ * 
+ * @param file_as_string
+*/
+void 
+post_probing(char* file_as_string){
     
     int sockfd, connfd;
     struct sockaddr_in servaddr, cli;
@@ -267,7 +284,16 @@ void post_probing(char* file_as_string){
     get_findings(sockfd, file_as_string);
     
 }
-void main(int argc, char **argv){
+
+
+/**
+ * main method
+ * 
+ * @param argc Number of arguments
+ * @param argv Pointer to a pointer to argv
+*/
+void 
+main(int argc, char **argv){
 
     config_file = malloc(sizeof(*config_file));
 

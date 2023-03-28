@@ -323,26 +323,7 @@ int syn_packet(int port){
     exit (EXIT_FAILURE);
   }
 
-  //Store RST packet
-
-  /*char buffer[2048];
-  int recv_len;
-  struct sockaddr_in sender_addr;
-  socklen_t len = sizeof (sender_addr);
-
-  if((recv_len = recvfrom(sd, buffer, sizeof(buffer), 0, (struct sockaddr *) &sender_addr, &len))<=0){
-    perror("recvfrom() failed");
-    exit(EXIT_FAILURE);
-  }
-
-  struct tcphdr* tcp_header = (struct tcphdr*)(buffer+sizeof(struct iphdr));
-
-  if(tcp_header->rst){
-    printf("Received RST packet\n");
-  }*/
-
-  //printf("buffer->%c\n", buffer[3]);
-  //printf("tcp Header->%c\n", tcp_header->rst);
+  
 
   // Close socket descriptor.
   close (sd);
@@ -1126,12 +1107,6 @@ int udp_high_packets(){
 }
 
 
-void sig_handler(int sig_num){
-  printf("Failed to detect due to insufficient information");
-  flag =1;
-}
-
-
 void *my_thread_rst(void *vargp){
   
   int sd;
@@ -1142,7 +1117,7 @@ void *my_thread_rst(void *vargp){
     exit (EXIT_FAILURE);
   }
   
-  int rst_count =0;
+  int rst_count = 0;
   
   char buffer[2048];
   int recv_len;
@@ -1152,14 +1127,14 @@ void *my_thread_rst(void *vargp){
 
   struct timeval t1, t2, t3, t4;
 
-  int packet_count = 0;
+  // int packet_count = 0;
 
   while(rst_count<4 && flag == 0){
     
-    if(packet_count == 0){
+    /*if(packet_count == 0){
       signal(SIGALRM, sig_handler);
       alarm(60);
-    }
+    }*/
 
     if((recv_len = recvfrom(sd, buffer, sizeof(buffer), 0, (struct sockaddr *) &sender_addr, &len))<=0){
       perror("recvfrom() failed");
@@ -1201,14 +1176,10 @@ void *my_thread_rst(void *vargp){
 
     }
 
-    // if(tcp_header->rst){
-    //   printf("Received RST packet\n");
-    // }
-
-    // if(tcp_header->saddr ==  && tcp_header->daddr == atoi(config_file->server_ip))
+  
 
     bzero(buffer, sizeof(buffer));
-    packet_count++;
+    // packet_count++;
   }
 
   // printf("RST Count->%d",rst_count);
@@ -1231,10 +1202,17 @@ void *my_thread_rst(void *vargp){
   // printf("tcp Header->%c\n", tcp_header->rst);
 }
 
+void sig_handler(int sig_num){
+  printf("Failed to detect due to insufficient information");
+  flag =1;
+}
 
 void *part1(void *vargp){
   
   int exit_success_head1 = syn_packet(atoi(config_file->dest_port_tcp_head));
+  signal(SIGALRM, sig_handler);
+  alarm(60);
+
   udp_low_packets();
   int exit_success_tail1 = syn_packet(atoi(config_file->dest_port_tcp_tail));
 
@@ -1246,50 +1224,6 @@ void *part1(void *vargp){
 
 }
 
-void *rst(){
-
-  int sd;
-  
-  // Submit request for a raw socket descriptor.
-  if ((sd = socket (PF_PACKET, SOCK_RAW, htons (ETH_P_ALL))) < 0) {
-    perror ("socket() failed ");
-    exit (EXIT_FAILURE);
-  }
-
-  char buffer[2048];
-  int recv_len;
-  struct sockaddr_in sender_addr;
-  
-  socklen_t len = sizeof (sender_addr);
-
-  while(1){
-    if((recv_len = recvfrom(sd, buffer, sizeof(buffer), 0, (struct sockaddr *) &sender_addr, &len))<=0){
-    perror("recvfrom() failed");
-    exit(EXIT_FAILURE);
-    }
-
-    struct tcphdr* tcp_header = (struct tcphdr*)(buffer+sizeof(struct iphdr) +sizeof(struct ether_header));
-
-    // printf("source port%d",ntohs(tcp_header->source));
-
-    if(ntohs(tcp_header->source) == atoi(config_file->dest_port_tcp_head)){
-      printf("source port%d",ntohs(tcp_header->source));
-    }
-
-    if(ntohs(tcp_header->source) == atoi(config_file->dest_port_tcp_tail)){
-      printf("source port%d",ntohs(tcp_header->source));
-    }
-
-    // if(ntohs(tcp_header->source) == 2056){
-    //   printf("source port%d",ntohs(tcp_header->source));
-    // }
-
-    bzero(buffer, sizeof(buffer));
-
-
-  }
-
-}
 
 void main(int argc, char **argv){
 
@@ -1361,8 +1295,6 @@ void main(int argc, char **argv){
   pthread_create(&t_id, NULL, part1, (void *)&t_id);
   pthread_create(&t_id, NULL, my_thread_rst, (void *)&t_id);
 
-  // rst();
-  //pthread_create(&t_id, NULL, my_thread_rst, (void *)&t_id);
 
   pthread_exit(NULL);
   exit(0);

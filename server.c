@@ -14,6 +14,8 @@
 // #define PORT 8080
 #define SA struct sockaddr
 int flag = 0;
+
+
 struct config_file{
     char server_ip[50];
     char source_port_udp[10];
@@ -27,7 +29,15 @@ struct config_file{
 
 struct config_file* config_file;
 
-bool create_json(char* buffer){
+/**
+ * Here structure is created which contains the fields of config file which has been sent by the client to the server
+ * 
+ * @param buffer
+ * 
+ * @return boolean variable
+*/
+bool 
+create_json(char* buffer){
 
     cJSON *json = cJSON_Parse(buffer);
     bool json_created = true;
@@ -63,7 +73,15 @@ bool create_json(char* buffer){
     return json_created;
 }
 
-bool get_client_data(int connfd){
+/**
+ * Here client data is taken into an array and json is created
+ * 
+ * @param connfd
+ * 
+ * @return boolean variable
+*/
+bool 
+get_client_data(int connfd){
     char buffer[2000];
 
 
@@ -88,8 +106,15 @@ bool get_client_data(int connfd){
 }
 
 
-
-bool tcp_connection(char* cmd_line_arg){
+/**
+ * Here TCP connection takes place and config file is received by the server from the client
+ * 
+ * @param cmd_line_arg A character pointer
+ * 
+ * @return character pointer
+*/
+bool 
+tcp_connection(char* cmd_line_arg){
 
     int sockfd, connfd, len;
     struct sockaddr_in serv_addr, cli;
@@ -143,43 +168,26 @@ bool tcp_connection(char* cmd_line_arg){
 }
 
 
-
-
-
-void udp_connection(){
-    char buffer[100];
-    char* message = "Hello Client";
-    int listenfd, len;
-    struct sockaddr_in serv_addr, cli_addr;
-    bzero(&serv_addr, sizeof(serv_addr));
-
-    listenfd = socket(AF_INET, SOCK_DGRAM, 0);//UDP Socket
-
-    serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
-    int port = atoi(config_file->dest_port_udp);
-    serv_addr.sin_port = htons(port);
-    serv_addr.sin_family = AF_INET;
-
-    
-    bind(listenfd, (struct sockaddr*)&serv_addr, sizeof(serv_addr));
-
-    len = sizeof(cli_addr);
-    
-    
-    int n = recvfrom(listenfd, buffer, sizeof(buffer), MSG_WAITALL, (struct sockaddr*)&cli_addr, &len);
-    buffer[n] = '\0';
-    printf("%s", buffer);
-    
-
-}
-
-void sig_handler(int sig_num){
+/**
+ * If alarm is trigger this method is called
+ * @param sig_num
+*/
+void 
+sig_handler(int sig_num){
     printf("loss");
     flag =1;
     //exit(0);
 }
 
-long int low_entropy(int listenfd, struct sockaddr_in cli_addr, int len){
+/**
+ * Here low entropy data is taken from the client and time difference is calculated between the first and last packet
+ * 
+ * @param listenfd
+ * @param cli_addr
+ * @param len 
+*/
+long int 
+low_entropy(int listenfd, struct sockaddr_in cli_addr, int len){
 
     struct timeval t1, t2;
 
@@ -204,7 +212,10 @@ long int low_entropy(int listenfd, struct sockaddr_in cli_addr, int len){
         
         if(i>0 && n>0)
             gettimeofday(&t2, NULL);
+
+        
     }
+
 
 
     long int time_diff = (t2.tv_sec - t1.tv_sec)*1000000+(t2.tv_usec - t1.tv_usec);
@@ -212,7 +223,15 @@ long int low_entropy(int listenfd, struct sockaddr_in cli_addr, int len){
     return time_diff;
 }
 
-long int high_entropy(int listenfd, struct sockaddr_in cli_addr,int len){
+/**
+ * Here high entropy data is taken from the client and time difference is calculated between the first and last packet
+ * 
+ * @param listenfd
+ * @param cli_addr
+ * @param len 
+*/
+long int 
+high_entropy(int listenfd, struct sockaddr_in cli_addr, int len){
     struct timeval t1, t2;
 
     unsigned char packet[atoi(config_file->payload)];
@@ -237,12 +256,20 @@ long int high_entropy(int listenfd, struct sockaddr_in cli_addr,int len){
 
     }
 
+    
+
     long int time_diff = (t2.tv_sec - t1.tv_sec)*1000000+(t2.tv_usec - t1.tv_usec);
     printf("TD for HE data is %ld", time_diff);
 
     return time_diff;
 }
-long int udp_packets(){
+
+/**
+ * Here low entropy and high entropy data is taken from the client and time difference is calculated between the high and low entropy packets
+ *
+*/
+long 
+int udp_packets(){
 
     int listenfd, len;
     char findings[50];
@@ -271,14 +298,30 @@ long int udp_packets(){
     
 }
 
-void send_findings(int connfd, char* findings){
+/**
+ * Here the findings whether compression is detected or not detected is sent to the client
+ * 
+ * @param connfd
+ * @param findings
+*/
+void 
+send_findings(int connfd, char* findings){
 
     // printf("Findings->%s", findings);
     printf("Message->%s", findings);
     write(connfd, findings, strlen(findings));//strlen, fprintf(CONNFD, FINDINGS)
 
 }
-void post_probing(char* cmd_line_arg, char* findings){
+
+/**
+ * Here TCP connection takes place between server and client and the findings are sent to the client
+ * 
+ * @param cmd_line_arg
+ * @param findings
+ * 
+*/
+void 
+post_probing(char* cmd_line_arg, char* findings){
     int sockfd, connfd, len;
     struct sockaddr_in serv_addr, cli;
 
@@ -333,7 +376,15 @@ void post_probing(char* cmd_line_arg, char* findings){
 
     send_findings(connfd, findings);
 }
-void main(int argc, char **argv){
+
+/**
+ * main method
+ * 
+ * @param argc Number of arguments
+ * @param argv Pointer to a pointer to argv
+*/
+void 
+main(int argc, char **argv){
 
     config_file = malloc(sizeof(*config_file));
 

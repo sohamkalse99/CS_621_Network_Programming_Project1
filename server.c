@@ -15,7 +15,7 @@
 #define SA struct sockaddr
 int flag = 0;
 
-
+/* Struct is used to store the values of config file*/
 struct config_file{
     char server_ip[50];
     char source_port_udp[10];
@@ -218,7 +218,7 @@ low_entropy(int listenfd, struct sockaddr_in cli_addr, int len){
 
     alarm(0);
 
-    long int time_diff = (t2.tv_sec*1000000 - t1.tv_sec*1000000)+(t2.tv_usec - t1.tv_usec);
+    long int time_diff = (t2.tv_sec - t1.tv_sec)*1000000+(t2.tv_usec - t1.tv_usec);
     printf("TD of l data is %ld", time_diff);
     return time_diff;
 }
@@ -262,7 +262,7 @@ high_entropy(int listenfd, struct sockaddr_in cli_addr, int len){
     alarm(0);
     
 
-    long int time_diff = (t2.tv_sec*1000000 - t1.tv_sec*1000000)+(t2.tv_usec - t1.tv_usec);
+    long int time_diff = (t2.tv_sec - t1.tv_sec)*1000000 +(t2.tv_usec - t1.tv_usec);
     printf("TD for HE data is %ld", time_diff);
 
     return time_diff;
@@ -297,8 +297,8 @@ int udp_packets(){
 
     
     long int delta_high = high_entropy(listenfd, cli_addr,len);
-
-    return abs(delta_high - delta_low);
+    
+    return fabs(delta_high - delta_low);
     
 }
 

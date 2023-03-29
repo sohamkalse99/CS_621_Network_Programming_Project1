@@ -123,7 +123,7 @@ void low_entropy(int sockfd, struct sockaddr_in serv_addr){
         
         
 
-        // usleep(150);//250 milisec
+        // usleep(200);//200 milisec
         int packet_sent = sendto(sockfd, packet, atoi(config_file->payload), 0, (struct sockaddr*)&serv_addr, sizeof(serv_addr));
         if(packet_sent<0){
             printf("Error in LE packet");
@@ -164,7 +164,7 @@ high_entropy(int sockfd, struct sockaddr_in serv_addr){
         packet[0] = (i>>8) & 0xFF;
         packet[1] = i & 0xFF;
         
-        // usleep(150); //200 milisec
+        // usleep(200); //200 milisec
         int packet_sent = sendto(sockfd, packet, atoi(config_file->payload), 0, (struct sockaddr*)&serv_addr, sizeof(serv_addr));
         if(packet_sent<0){
             printf("Error in HE packet");
@@ -354,6 +354,6 @@ main(int argc, char **argv){
     }
 
 
-    sleep(8);
+    sleep(7);
     post_probing(file_as_string);
 }

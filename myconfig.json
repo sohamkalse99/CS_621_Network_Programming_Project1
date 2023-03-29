@@ -1,6 +1,7 @@
 {
   "clientIP": "10.0.0.245",
   "serverIP": "10.0.0.27",
+  "TCPPort": "2056",
   "sourcePortUDP":"9876",
   "destPortUDP":"8765",
   "destPortTCPHead":"2000",

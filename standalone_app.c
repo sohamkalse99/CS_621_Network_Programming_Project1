@@ -60,6 +60,7 @@ struct config_file{
 
   char client_ip[50];
   char server_ip[50];
+  char tcp_port[50];
   char source_port_udp[10];
   char dest_port_udp[10];
   char dest_port_tcp_head[40];
@@ -240,7 +241,7 @@ syn_packet(int port){
   // TCP header
 
   // Source port number (16 bits)
-  tcphdr.th_sport = htons (2056);
+  tcphdr.th_sport = htons (atoi(config_file->tcp_port));
 
   // Destination port number (16 bits)
   tcphdr.th_dport = htons (port);
@@ -1153,28 +1154,28 @@ void
 
     if(tcp_header->rst && tcp_header->th_ack){
       
-      if(ntohs(tcp_header->source) == atoi(config_file->dest_port_tcp_head) && ntohs(tcp_header->dest) == 2056 && rst_count == 0){
+      if(ntohs(tcp_header->source) == atoi(config_file->dest_port_tcp_head) && ntohs(tcp_header->dest) == atoi(config_file->tcp_port) && rst_count == 0){
         gettimeofday(&t1, NULL);
         // printf("source port%d",ntohs(tcp_header->source));
         rst_count++;
 
       }
       
-      else if(ntohs(tcp_header->source) == atoi(config_file->dest_port_tcp_tail) && ntohs(tcp_header->dest) == 2056 && rst_count == 1){
+      else if(ntohs(tcp_header->source) == atoi(config_file->dest_port_tcp_tail) && ntohs(tcp_header->dest) == atoi(config_file->tcp_port) && rst_count == 1){
         gettimeofday(&t2, NULL);
         // printf("source port%d",ntohs(tcp_header->source));
         rst_count++;
 
       }
 
-      else if(ntohs(tcp_header->source) == atoi(config_file->dest_port_tcp_head) && ntohs(tcp_header->dest) == 2056 && rst_count == 2){
+      else if(ntohs(tcp_header->source) == atoi(config_file->dest_port_tcp_head) && ntohs(tcp_header->dest) == atoi(config_file->tcp_port) && rst_count == 2){
         gettimeofday(&t3, NULL);
         // printf("source port%d",ntohs(tcp_header->source));
         rst_count++;
 
       }
 
-      else if(ntohs(tcp_header->source) == atoi(config_file->dest_port_tcp_tail) && ntohs(tcp_header->dest) == 2056 && rst_count == 3){
+      else if(ntohs(tcp_header->source) == atoi(config_file->dest_port_tcp_tail) && ntohs(tcp_header->dest) == atoi(config_file->tcp_port) && rst_count == 3){
         gettimeofday(&t4, NULL);
         // printf("source port%d",ntohs(tcp_header->source));
         rst_count++;
@@ -1272,6 +1273,7 @@ main(int argc, char **argv){
 
   const cJSON *client_ip = cJSON_GetObjectItemCaseSensitive(json, "clientIP");
   const cJSON *server_ip = cJSON_GetObjectItemCaseSensitive(json, "serverIP");
+  const cJSON *tcp_port = cJSON_GetObjectItemCaseSensitive(json, "TCPPort");
   const cJSON *source_port_udp = cJSON_GetObjectItemCaseSensitive(json, "sourcePortUDP");
   const cJSON *dest_port_udp = cJSON_GetObjectItemCaseSensitive(json, "destPortUDP");
   const cJSON *dest_port_tcp_head = cJSON_GetObjectItemCaseSensitive(json, "destPortTCPHead");
@@ -1284,6 +1286,7 @@ main(int argc, char **argv){
 
   strcpy(config_file->client_ip, client_ip->valuestring);
   strcpy(config_file->server_ip, server_ip->valuestring);
+  strcpy(config_file->tcp_port, tcp_port->valuestring);
   strcpy(config_file->source_port_udp, source_port_udp->valuestring);
   strcpy(config_file->dest_port_udp, dest_port_udp->valuestring);
   strcpy(config_file->dest_port_tcp_head, dest_port_tcp_head->valuestring);

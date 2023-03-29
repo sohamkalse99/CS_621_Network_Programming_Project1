@@ -55,6 +55,7 @@ int flag = 0;
 // #define PORT 8080
 #define SA struct sockaddr
 
+/* Struct is used to store the values of config file*/
 struct config_file{
 
   char client_ip[50];
@@ -1190,13 +1191,13 @@ void
 
   // printf("RST Count->%d",rst_count);
 
-  long int time_diff1 = (t2.tv_sec - t1.tv_sec)*1000000+(t2.tv_usec - t1.tv_usec); //time difference of first 2 RST Packets in micro seconds
+  long int time_diff1 = (t2.tv_sec - t1.tv_sec)*1000000 +(t2.tv_usec - t1.tv_usec); //time difference of first 2 RST Packets in micro seconds
   long int time_diff2 = (t4.tv_sec - t3.tv_sec)*1000000+(t4.tv_usec - t3.tv_usec); //time difference of next 2 RST Packets in micro seconds
 
   printf("Time Difference1->%ld", time_diff1);
   printf("Time Difference2->%ld", time_diff2);
 
-  long int time_diff = abs(time_diff2 - time_diff1);
+  long int time_diff = fabs(time_diff2 - time_diff1);
 
   if(time_diff>100000){
     printf("Compression Detected");

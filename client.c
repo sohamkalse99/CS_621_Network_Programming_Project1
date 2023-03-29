@@ -12,6 +12,7 @@
 // #define PORT 8080
 #define SA struct sockaddr
 
+/* Struct is used to store the values of config file*/
 struct config_file{
     
     char client_ip[50];
@@ -108,7 +109,7 @@ char* tcp_connection(char* file_as_string){
 */
 void low_entropy(int sockfd, struct sockaddr_in serv_addr){
     
-    uint16_t packet_id = 0; //initialize packet_id to zero
+    
 
     unsigned char packet[atoi(config_file->payload)];
 
@@ -125,7 +126,7 @@ void low_entropy(int sockfd, struct sockaddr_in serv_addr){
         // usleep(150);//250 milisec
         int packet_sent = sendto(sockfd, packet, atoi(config_file->payload), 0, (struct sockaddr*)&serv_addr, sizeof(serv_addr));
         if(packet_sent<0){
-            printf("Error in LE packet id %d\n", packet_id);
+            printf("Error in LE packet");
             exit(1);
         }
         
@@ -157,10 +158,6 @@ high_entropy(int sockfd, struct sockaddr_in serv_addr){
 
     
 
-    uint16_t packet_id = 0; //initialize packet_id to zero
-
-    
-
     for(int i =0;i<atoi(config_file->no_of_packets);i++){
 
         
@@ -170,7 +167,7 @@ high_entropy(int sockfd, struct sockaddr_in serv_addr){
         // usleep(150); //200 milisec
         int packet_sent = sendto(sockfd, packet, atoi(config_file->payload), 0, (struct sockaddr*)&serv_addr, sizeof(serv_addr));
         if(packet_sent<0){
-            printf("Error in HE packet id %d\n", packet_id);
+            printf("Error in HE packet");
             exit(1);
         }
 

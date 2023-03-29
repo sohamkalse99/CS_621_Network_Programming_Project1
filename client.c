@@ -194,6 +194,7 @@ udp_packets(){
     
     memset(&cli_addr, 0, sizeof(cli_addr));
 
+    cli_addr.sin_addr.s_addr = inet_addr(config_file->client_ip);
     cli_addr.sin_family = AF_INET;
     cli_addr.sin_port = htons(atoi(config_file->source_port_udp));
 

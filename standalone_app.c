@@ -72,7 +72,12 @@ struct config_file{
 
 struct config_file* config_file;
 
-int syn_packet(int port){
+/**
+ * Method create SYN packets using raw sockets
+ * @param port
+*/
+int 
+syn_packet(int port){
   int i, status, frame_length, sd, bytes, *ip_flags, *tcp_flags;
   char *interface, *target, *src_ip, *dst_ip;
   struct ip iphdr;
@@ -604,8 +609,11 @@ allocate_intmem (int len) {
   }
 }
 
-
-int udp_low_packets(){
+/**
+ * Method creates low entropy packets and sends to the server
+*/
+int 
+udp_low_packets(){
   int i, status, datalen, frame_length, sd, bytes, *ip_flags;
   char *interface, *target, *src_ip, *dst_ip;
   struct ip iphdr;
@@ -705,13 +713,6 @@ int udp_low_packets(){
   device.sll_family = AF_PACKET;
   memcpy (device.sll_addr, src_mac, 6 * sizeof (uint8_t));
   device.sll_halen = 6;
-
-  // UDP data
-  // datalen = 4;
-  // data[0] = 'T';
-  // data[1] = 'e';
-  // data[2] = 's';
-  // data[3] = 't';
 
   char data[atoi(config_file->payload)];
   memset(data, 0, atoi(config_file->payload));
@@ -852,7 +853,11 @@ int udp_low_packets(){
   return (EXIT_SUCCESS);
 }
 
-int udp_high_packets(){
+/**
+ * Method creates high entropy packets and sends to server
+*/
+int 
+udp_high_packets(){
   
   int i, status, datalen, frame_length, sd, bytes, *ip_flags;
   char *interface, *target, *src_ip, *dst_ip;
@@ -953,13 +958,6 @@ int udp_high_packets(){
   device.sll_family = AF_PACKET;
   memcpy (device.sll_addr, src_mac, 6 * sizeof (uint8_t));
   device.sll_halen = 6;
-
-  // UDP data
-  // datalen = 4;
-  // data[0] = 'T';
-  // data[1] = 'e';
-  // data[2] = 's';
-  // data[3] = 't';
 
   char data[atoi(config_file->payload)];
   
@@ -1111,8 +1109,11 @@ int udp_high_packets(){
 
 }
 
-
-void *my_thread_rst(void *vargp){
+/**
+ * This thread receives RST packet which server has sent
+*/
+void 
+*my_thread_rst(void *vargp){
   
   int sd;
   
@@ -1203,16 +1204,24 @@ void *my_thread_rst(void *vargp){
   else{
     printf("Compression not detected");
   }
-  // printf("buffer->%c\n", buffer[3]);
-  // printf("tcp Header->%c\n", tcp_header->rst);
+  
 }
 
-void sig_handler(int sig_num){
+/**
+ * If alarm is trigger this method is called
+ * @param sig_num
+*/
+void 
+sig_handler(int sig_num){
   printf("Failed to detect due to insufficient information");
   flag =1;
 }
 
-void *part1(void *vargp){
+/**
+ * This thread sends 4 SYN packets and 2 UDP packets one with low entropy and another with high entropy
+*/
+void 
+*part1(void *vargp){
   
   int exit_success_head1 = syn_packet(atoi(config_file->dest_port_tcp_head));
   signal(SIGALRM, sig_handler);
@@ -1229,8 +1238,14 @@ void *part1(void *vargp){
 
 }
 
-
-void main(int argc, char **argv){
+/**
+ * main method
+ * 
+ * @param argc Number of arguments
+ * @param argv Pointer to a pointer to argv
+*/
+void 
+main(int argc, char **argv){
 
   config_file = malloc(sizeof(*config_file));
 
